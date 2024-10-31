@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
     );
 
     // 4. 최종 응답
-    return NextResponse.json({ message: 'Commits processed and sent to Notion API', notionResponse: notionResponse.data }, { status: 200 });
+    return NextResponse.json({ message: 'Commits phhhrocessed and sent to Notion API', notionResponse: notionResponse.data }, { status: 200 });
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
       return NextResponse.json({ error: error.response.statusText }, { status: error.response.status });
