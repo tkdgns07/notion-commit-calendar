@@ -11,12 +11,12 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const response = axios.get('/api/getgitcommit');
+    void axios.get('/api/getgitcommit');
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
-  } catch (error) {
+  } catch {
     return new Response(JSON.stringify({ success: false, error: 'error' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },

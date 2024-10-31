@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import axios from 'axios';
 
 function getISOTimeFiveMinutesAgo(): string {
@@ -23,7 +23,7 @@ interface CommitDetail {
   files: CommitFile[];
 }
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const owner = process.env.GITHUB_REPO_OWNER;
   const repo = process.env.GITHUB_REPO_NAME;
   const githubToken = process.env.GITHUB_TOKEN;
@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
             Authorization: `Bearer ${githubToken}`,
           },
         });
-        const { sha, commit: { author, message }, files } = commitDetailResponse.data;
+        const { sha, commit: { author, message } } = commitDetailResponse.data;
 
         // 모든 브랜치를 확인하고, 커밋을 포함하는 브랜치 찾기
         const branchesUrl = `https://api.github.com/repos/${owner}/${repo}/branches`;
