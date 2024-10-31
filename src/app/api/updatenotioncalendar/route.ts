@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
         return await notion.pages.create({
           parent: { database_id: databaseId },
           properties: {
-            Title: {
+            Name: {
               title: [
                 {
                   text: {
