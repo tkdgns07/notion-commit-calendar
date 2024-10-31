@@ -6,21 +6,31 @@ function getISOTimeFiveMinutesAgo(): string {
   return fiveMinutesAgo.toISOString();
 }
 
+interface CommitFile {
+  filename: string;
+  patch?: string;
+}
+
 interface CommitDetail {
   sha: string;
-  files: {
-    filename: string;
-    patch?: string;
-  }[];
+  commit: {
+    author: {
+      name: string;
+      date: string;
+    };
+    message: string;
+  };
+  files: CommitFile[];
 }
 
 export async function GET(req: NextRequest) {
   const owner = process.env.GITHUB_REPO_OWNER;
   const repo = process.env.GITHUB_REPO_NAME;
-  const token = process.env.GITHUB_TOKEN;
+  const githubToken = process.env.GITHUB_TOKEN;
+  const notionUpdateApiUrl = `${process.env.BASE_URL}/api/update-notion-calendar`;
 
-  if (!owner || !repo || !token) {
-    return NextResponse.json({ error: 'epository owner, name, and token must be set in environment variables' }, { status: 500 });
+  if (!owner || !repo || !githubToken || !notionUpdateApiUrl) {
+    return NextResponse.json({ error: 'Environment variables not set correctly.' }, { status: 500 });
   }
 
   try {
@@ -30,7 +40,7 @@ export async function GET(req: NextRequest) {
     // 1. 최근 5분 내 커밋 목록 가져오기
     const commitListResponse = await axios.get(url, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${githubToken}`,
       },
       params: { since },
     });
@@ -43,23 +53,29 @@ export async function GET(req: NextRequest) {
         const commitDetailUrl = `https://api.github.com/repos/${owner}/${repo}/commits/${commit.sha}`;
         const commitDetailResponse = await axios.get<CommitDetail>(commitDetailUrl, {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${githubToken}`,
           },
         });
-        const { sha, files } = commitDetailResponse.data;
+        const { sha, commit: { author, message }, files } = commitDetailResponse.data;
 
-        // 각 파일별 patch 데이터 포함
-        const fileChanges = files.map(file => ({
-          filename: file.filename,
-          patch: file.patch || '',  // patch 정보가 없는 경우 빈 문자열
-        }));
-
-        return { sha, files: fileChanges };
+        // 파일별 patch 데이터 포함
+        return { sha, author: author.name, date: author.date, message };
       })
     );
 
-    // 3. 각 커밋의 변경 사항을 반환
-    return NextResponse.json({ commitDetails }, { status: 200 });
+    // 3. Notion 업데이트 API에 데이터 전송
+    const notionResponse = await axios.post(
+      notionUpdateApiUrl,
+      commitDetails,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    // 4. 최종 응답
+    return NextResponse.json({ message: 'Commits processed and sent to Notion API', notionResponse: notionResponse.data }, { status: 200 });
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
       return NextResponse.json({ error: error.response.statusText }, { status: error.response.status });
