@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import axios from 'axios';
+import { Client } from '@notionhq/client';
+
+// Notion 클라이언트 초기화
+const notion = new Client({ auth: process.env.NOTION_TOKEN });
 
 interface CommitData {
   sha: string;
@@ -8,84 +11,70 @@ interface CommitData {
   message: string;
 }
 
-
-
 export async function POST(req: NextRequest) {
-  const notionToken = process.env.NOTION_TOKEN;
   const databaseId = process.env.NOTION_DATABASE_ID;
 
-  if (!notionToken || !databaseId) {
-    return NextResponse.json({ error: 'Notion API token or database ID not set in environment variables.' }, { status: 500 });
+  if (!databaseId) {
+    return NextResponse.json({ error: 'Notion database ID is not set in environment variables.' }, { status: 500 });
   }
 
+  // 요청에서 커밋 데이터를 추출
   const commitDataArray: CommitData[] = await req.json();
 
   try {
+    // 각 커밋을 Notion 데이터베이스에 추가
     const responses = await Promise.all(
       commitDataArray.map(async (commit) => {
-        const notionUrl = `https://api.notion.com/v1/pages`;
-        const response = await axios.post(
-          notionUrl,
-          {
-            parent: { database_id: databaseId },
-            properties: {
-              Title: {
-                title: [
-                  {
-                    text: {
-                      content: commit.message,
-                    },
+        return await notion.pages.create({
+          parent: { database_id: databaseId },
+          properties: {
+            Title: {
+              title: [
+                {
+                  text: {
+                    content: commit.message,
                   },
-                ],
-              },
-              Date: {
-                date: {
-                  start: commit.date,
                 },
+              ],
+            },
+            Date: {
+              date: {
+                start: commit.date,
               },
-              User: {
-                rich_text: [
-                  {
-                    text: {
-                      content: commit.author,
-                    },
+            },
+            User: {
+              rich_text: [
+                {
+                  text: {
+                    content: commit.author,
                   },
-                ],
-              },
-              SHA: {
-                rich_text: [
-                  {
-                    text: {
-                      content: commit.sha,
-                    },
+                },
+              ],
+            },
+            SHA: {
+              rich_text: [
+                {
+                  text: {
+                    content: commit.sha,
                   },
-                ],
-              },
+                },
+              ],
             },
           },
-          {
-            headers: {
-              Authorization: `Bearer ${notionToken}`,
-              'Content-Type': 'application/json',
-              'Notion-Version': '2022-06-28',
-            },
-          }
-        );
-        return response.data;
+        });
       })
     );
 
-    return NextResponse.json({ message: 'Commddits added to Notion database', data: responses }, { status: 200 });
+    // 성공적으로 추가되면 응답 반환
+    return NextResponse.json({ message: 'Commits added to Notion database', data: responses }, { status: 200 });
   } catch (error) {
-    if (axios.isAxiosError(error)) {
-        // AxiosError 타입일 경우
-        return NextResponse.json({ error: error.response?.statusText || 'Axios request failed' }, { status: error.response?.status || 500 });
-      } else if (error instanceof Error) {
-        // 일반 Error 타입일 경우
-        return NextResponse.json({ error: 'fuck' }, { status: 500 });
-      } else {
-        // 예상치 못한 타입일 경우
-        return NextResponse.json({ error: 'An unknown error occurred' }, { status: 500 });
-      }
+    // 오류 처리
+    if (error instanceof Error) {
+      console.error('Error adding commits to Notion:', error.message);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    } else {
+      console.error('Unknown error adding commits to Notion');
+      return NextResponse.json({ error: 'An unknown error occurred' }, { status: 500 });
+    }
   }
 }
