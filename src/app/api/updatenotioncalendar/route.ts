@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: error.response?.statusText || 'Axios request failed' }, { status: error.response?.status || 500 });
       } else if (error instanceof Error) {
         // 일반 Error 타입일 경우
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: 'fuck' }, { status: 500 });
       } else {
         // 예상치 못한 타입일 경우
         return NextResponse.json({ error: 'An unknown error occurred' }, { status: 500 });

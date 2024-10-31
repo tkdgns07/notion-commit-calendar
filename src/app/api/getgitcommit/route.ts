@@ -63,6 +63,8 @@ export async function GET(req: NextRequest) {
       })
     );
 
+    console.log(commitDetails)
+
     // 3. Notion 업데이트 API에 데이터 전송
     const notionResponse = await axios.post(
       notionUpdateApiUrl,
