@@ -11,8 +11,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const response_wakeup = await axios.get('http://127.0.0.1:8000/wcalendar-values/cronjob');
-    const response_labor = await axios.get('http://127.0.0.1:8000/lcalendar-values/cronjob');
+    const response = axios.get('/api/getgitcommit');
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
