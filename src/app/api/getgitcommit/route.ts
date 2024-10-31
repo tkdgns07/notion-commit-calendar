@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import axios from 'axios';
 
 function getISOTimeFiveMinutesAgo(): string {
-  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+  const fiveMinutesAgo = new Date(Date.now() - 3 * 60 * 1000);
   return fiveMinutesAgo.toISOString();
 }
 
