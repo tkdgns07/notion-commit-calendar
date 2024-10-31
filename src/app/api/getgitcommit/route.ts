@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
   const token = process.env.GITHUB_TOKEN;
 
   if (!owner || !repo || !token) {
-    return NextResponse.json({ error: 'Repository owner, name, and token must be set in environment variables' }, { status: 500 });
+    return NextResponse.json({ error: 'epository owner, name, and token must be set in environment variables' }, { status: 500 });
   }
 
   try {
