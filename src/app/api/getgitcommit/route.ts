@@ -37,7 +37,6 @@ export async function GET() {
     const since = getISOTimeFiveMinutesAgo();
     const url = `https://api.github.com/repos/${owner}/${repo}/commits`;
 
-    // 1. 최근 5분 내 커밋 목록 가져오기
     const commitListResponse = await axios.get(url, {
       headers: {
         Authorization: `Bearer ${githubToken}`,
