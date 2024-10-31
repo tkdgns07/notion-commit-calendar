@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     );
 
     // 성공적으로 추가되면 응답 반환
-    return NextResponse.json({ message: 'Commits added to Notion database', data: responses }, { status: 200 });
+    return NextResponse.json({ message: 'Commits addded to Notion database', data: responses }, { status: 200 });
   } catch (error) {
     // 오류 처리
     if (error instanceof Error) {
