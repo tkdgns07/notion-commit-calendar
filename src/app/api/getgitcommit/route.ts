@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
   const owner = process.env.GITHUB_REPO_OWNER;
   const repo = process.env.GITHUB_REPO_NAME;
   const githubToken = process.env.GITHUB_TOKEN;
-  const notionUpdateApiUrl = `${process.env.BASE_URL}/api/update-notion-calendar`;
+  const notionUpdateApiUrl = `${process.env.BASE_URL}/api/updatenotioncalendar`;
 
   if (!owner || !repo || !githubToken || !notionUpdateApiUrl) {
     return NextResponse.json({ error: 'Environment variables not set correctly.' }, { status: 500 });
@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
     );
 
     // 4. 최종 응답
-    return NextResponse.json({ message: 'Commits processed and sent to Notion API', notionResponse: notionResponse.data }, { status: 200 });
+    return NextResponse.json({ message: 'Commits processed and sent to Notion API', notionResponse: notionResponse.data, commits : commits }, { status: 200 });
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
       return NextResponse.json({ error: error.response.statusText }, { status: error.response.status });

@@ -8,6 +8,8 @@ interface CommitData {
   message: string;
 }
 
+
+
 export async function POST(req: NextRequest) {
   const notionToken = process.env.NOTION_TOKEN;
   const databaseId = process.env.NOTION_DATABASE_ID;
