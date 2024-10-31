@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
       })
     );
 
-    return NextResponse.json({ message: 'Commits added to Notion database', data: responses }, { status: 200 });
+    return NextResponse.json({ message: 'Commddits added to Notion database', data: responses }, { status: 200 });
   } catch (error) {
     if (axios.isAxiosError(error)) {
         // AxiosError 타입일 경우
