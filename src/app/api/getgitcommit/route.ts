@@ -23,7 +23,7 @@ interface CommitDetail {
   files: CommitFile[];
 }
 
-export async function GET() {
+export async function POST() {
   const owner = process.env.GITHUB_REPO_OWNER;
   const repo = process.env.GITHUB_REPO_NAME;
   const githubToken = process.env.GITHUB_TOKEN;
