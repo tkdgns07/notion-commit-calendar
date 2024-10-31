@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   const databaseId = process.env.NOTION_DATABASE_ID;
 
   if (!databaseId) {
-    return NextResponse.json({ error: 'Notion database ID is not set in environment variables.' }, { status: 500 });
+    return NextResponse.json({ error: 'Notion dataddbase ID is not set in environment variables.' }, { status: 500 });
   }
 
   // 요청에서 커밋 데이터를 추출
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     } else {
       console.error('Unknown error adding commits to Notion');
-      return NextResponse.json({ error: 'An unknown error occurred' }, { status: 500 });
+      return NextResponse.json({ error: 'An unknddown error occurred' }, { status: 500 });
     }
   }
 }
