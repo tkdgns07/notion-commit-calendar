@@ -109,12 +109,17 @@ async function updateCommit(commitDetails: CommitDetail[]) {
       }
     );
 
-    return NextResponse.json({ message: 'Commits processed and sent to Notion API', notionResponse: notionResponse.data, commits: commitDetails }, { status: 200 });
+    return {
+      success: true,
+      data: notionResponse.data,
+      commits: commitDetails,
+    };
   } catch (error) {
+    console.error('Error updating commit:', error);
     if (axios.isAxiosError(error) && error.response) {
-      return NextResponse.json({ error: error.response.statusText }, { status: error.response.status });
+      return { success: false, error: error.response.statusText };
     }
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return { success: false, error: 'Internal Server Error' };
   }
 }
 
@@ -127,7 +132,12 @@ export async function POST(req: NextRequest) {
 
   if (eventType === 'push') {
     const commitDetails = await getCommit(true);
-    return await updateCommit(commitDetails as CommitDetail[]);
+    const result = await updateCommit(commitDetails as CommitDetail[]);
+    if (result.success) {
+      return NextResponse.json({ message: 'Commits processed and sent to Notion API', data: result.data, commits: result.commits }, { status: 200 });
+    } else {
+      return NextResponse.json({ error: result.error }, { status: 500 });
+    }
   } else if (eventType === 'getBranch') {
     const branchDetails = await getCommit(false);
     return NextResponse.json(branchDetails, { status: 200 });

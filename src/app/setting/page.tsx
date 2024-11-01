@@ -15,10 +15,10 @@ async function getBranches(): Promise<string[]> {
         },
       }
     );
-    return response.data;
+    return response.data.branches;
   } catch (error) {
     console.error('Error triggering webhook:', error);
-    return [];
+    return []; // 오류 발생 시 빈 배열 반환
   }
 }
 
