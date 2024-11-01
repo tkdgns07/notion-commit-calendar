@@ -117,6 +117,7 @@ async function getCommit(includeDetails = true): Promise<CommitDetail[] | Branch
 }
 
 async function updateCommit(commitDetails: CommitDetail[]) {
+  console.log(commitDetails)
   try {
     const notionResponse = await axios.post(
       notionUpdateApiUrl,
