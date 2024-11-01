@@ -1,6 +1,8 @@
 'use client'
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import axios from "axios";
+import data from '@emoji-mart/data'
+import Picker from '@emoji-mart/react'
 
 async function getBranches(): Promise<string[]> {
   try {
@@ -31,16 +33,18 @@ export default function Page() {
       setBranches(branches);
     }
     fetchBranches();
-  }, []); // 의존성 배열을 빈 배열로 설정하여 한 번만 실행
+  }, []);
 
   return (
     <div>
-      <h1>Branches</h1>
-      <ul>
-        {branches.map((branch, index) => (
-          <li key={index}>{branch}</li>
-        ))}
-      </ul>
+        <div>
+            {branches.map((branch, index) => (
+                <div className="flex" key={index}>
+                    <p className="text-3xl">{branch}</p>
+                    <Picker data={data} onEmojiSelect={console.log} />
+                </div>
+            ))}
+        </div>
     </div>
   );
 }
