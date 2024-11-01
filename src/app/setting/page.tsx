@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import data from '@emoji-mart/data'
 import Picker from '@emoji-mart/react'
