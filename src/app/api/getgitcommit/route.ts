@@ -1,13 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 
-function getISOTimeFiveMinutesAgo(): string {
-  const fiveMinutesAgo = new Date(Date.now() - 3 * 60 * 1000);
-  return fiveMinutesAgo.toISOString();
-}
-//ddddddddddddddddd
 interface CommitFile {
   filename: string;
+  additions: number;
+  deletions: number;
+  changes: number;
   patch?: string;
 }
 
@@ -23,16 +21,21 @@ interface CommitDetail {
   files: CommitFile[];
 }
 
-export async function POST() {
-  const owner = process.env.GITHUB_REPO_OWNER;
-  const repo = process.env.GITHUB_REPO_NAME;
-  const githubToken = process.env.GITHUB_TOKEN;
-  const notionUpdateApiUrl = `${process.env.BASE_URL}/api/updatenotioncalendar`;
+interface BranchOnlyResult {
+  branches: string[];
+}
 
-  if (!owner || !repo || !githubToken || !notionUpdateApiUrl) {
-    return NextResponse.json({ error: 'Environment variables not set correctly.' }, { status: 500 });
-  }
+const owner = process.env.GITHUB_REPO_OWNER;
+const repo = process.env.GITHUB_REPO_NAME;
+const githubToken = process.env.GITHUB_TOKEN;
+const notionUpdateApiUrl = `${process.env.BASE_URL}/api/updatenotioncalendar`;
 
+function getISOTimeFiveMinutesAgo(): string {
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+  return fiveMinutesAgo.toISOString();
+}
+
+async function getCommit(includeDetails = true): Promise<CommitDetail[] | BranchOnlyResult> {
   try {
     const since = getISOTimeFiveMinutesAgo();
     const url = `https://api.github.com/repos/${owner}/${repo}/commits`;
@@ -46,7 +49,18 @@ export async function POST() {
 
     const commits = commitListResponse.data;
 
-    // 2. 각 커밋의 SHA를 사용해 상세 정보와 포함된 브랜치 가져오기
+    if (!includeDetails) {
+      const branchesUrl = `https://api.github.com/repos/${owner}/${repo}/branches`;
+      const branchesResponse = await axios.get(branchesUrl, {
+        headers: {
+          Authorization: `Bearer ${githubToken}`,
+        },
+      });
+
+      const branches = branchesResponse.data.map((branch: { name: string }) => branch.name);
+      return { branches };
+    }
+
     const commitDetails = await Promise.all(
       commits.map(async (commit: { sha: string }) => {
         const commitDetailUrl = `https://api.github.com/repos/${owner}/${repo}/commits/${commit.sha}`;
@@ -55,35 +69,36 @@ export async function POST() {
             Authorization: `Bearer ${githubToken}`,
           },
         });
-        const { sha, commit: { author, message } } = commitDetailResponse.data;
 
-        // 모든 브랜치를 확인하고, 커밋을 포함하는 브랜치 찾기
-        const branchesUrl = `https://api.github.com/repos/${owner}/${repo}/branches`;
-        const branchesResponse = await axios.get(branchesUrl, {
-          headers: {
-            Authorization: `Bearer ${githubToken}`,
-          },
-        });
-        
-        // 해당 커밋을 포함하는 브랜치 찾기
-        const branches = branchesResponse.data.filter(async (branch: { name: string; commit: { sha: string } }) => {
-          const branchCommitUrl = `https://api.github.com/repos/${owner}/${repo}/commits/${branch.commit.sha}`;
-          const branchCommitResponse = await axios.get(branchCommitUrl, {
-            headers: {
-              Authorization: `Bearer ${githubToken}`,
-            },
-          });
-          return branchCommitResponse.data.parents.some((parent: { sha: string }) => parent.sha === commit.sha);
-        }).map((branch: { name: string }) => branch.name);
+        const { sha, commit: { author, message }, files } = commitDetailResponse.data;
 
-        // 파일별 patch 데이터 포함
-        return { sha, author: author.name, date: author.date, message, branches };
+        const formattedFiles = files.map(file => ({
+          filename: file.filename,
+          additions: file.additions,
+          deletions: file.deletions,
+          changes: file.changes,
+          patch: file.patch,
+        }));
+
+        return {
+          sha,
+          author: author.name,
+          date: author.date,
+          message,
+          files: formattedFiles,
+        };
       })
     );
 
-    console.log(commitDetails);
+    return commitDetails;
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    throw error;
+  }
+}
 
-    // 3. Notion 업데이트 API에 데이터 전송
+async function updateCommit(commitDetails: CommitDetail[]) {
+  try {
     const notionResponse = await axios.post(
       notionUpdateApiUrl,
       commitDetails,
@@ -94,12 +109,29 @@ export async function POST() {
       }
     );
 
-    // 4. 최종 응답
     return NextResponse.json({ message: 'Commits processed and sent to Notion API', notionResponse: notionResponse.data, commits: commitDetails }, { status: 200 });
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
       return NextResponse.json({ error: error.response.statusText }, { status: error.response.status });
     }
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  if (!owner || !repo || !githubToken || !notionUpdateApiUrl) {
+    return NextResponse.json({ error: 'Environment variables not set correctly.' }, { status: 500 });
+  }
+
+  const eventType = req.headers.get('X-GitHub-Event');
+
+  if (eventType === 'push') {
+    const commitDetails = await getCommit(true);
+    return await updateCommit(commitDetails as CommitDetail[]);
+  } else if (eventType === 'getBranch') {
+    const branchDetails = await getCommit(false);
+    return NextResponse.json(branchDetails, { status: 200 });
+  } else {
+    return NextResponse.json({ message: 'Event not supported' }, { status: 400 });
   }
 }
