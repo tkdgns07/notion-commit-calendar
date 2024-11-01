@@ -12,8 +12,7 @@ async function getBranches(): Promise<string[]> {
       {
         headers: {
           'Content-Type': 'application/json',
-          'X-GitHub-Event': 'getBranch', // 커스텀 이벤트명 설정
-        //   Authorization: `Bearer YOUR_ACCESS_TOKEN`, // 필요한 경우 인증 헤더 포함
+          'X-GitHub-Event': 'getBranch',
         },
       }
     );

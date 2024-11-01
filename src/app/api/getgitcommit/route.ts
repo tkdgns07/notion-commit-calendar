@@ -20,6 +20,9 @@ interface CommitDetail {
     };
     message: string;
   };
+  author: {
+    avatar_url: string; // 유저의 프로필 이미지 URL
+  };
   branches: string[]; // 브랜치 정보 추가
   files: CommitFile[];
 }
@@ -73,7 +76,7 @@ async function getCommit(includeDetails = true): Promise<CommitDetail[] | Branch
           },
         });
 
-        const { sha, commit: { author, message }, files } = commitDetailResponse.data;
+        const { sha, commit: { author, message }, author : commitAuthor, files } = commitDetailResponse.data;
 
         const branchesUrl = `https://api.github.com/repos/${owner}/${repo}/branches`;
         const branchesResponse = await axios.get(branchesUrl, {
@@ -101,6 +104,7 @@ async function getCommit(includeDetails = true): Promise<CommitDetail[] | Branch
           message,
           files: formattedFiles,
           branches, // 브랜치 정보 추가
+          avatarUrl: commitAuthor?.avatar_url || '', // 커밋 유저의 프로필 이미지 URL 추가
         };
       })
     );

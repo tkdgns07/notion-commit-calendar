@@ -9,7 +9,8 @@ interface CommitData {
   author: string;
   date: string;
   message: string;
-  branches: string[]; // 브랜치 정보를 추가
+  branches: string[];
+  avatar_url : string;
 }
 
 export async function POST(req: NextRequest) {
@@ -27,7 +28,15 @@ export async function POST(req: NextRequest) {
     const responses = await Promise.all(
       commitDataArray.map(async (commit) => {
         return await notion.pages.create({
-          parent: { database_id: databaseId },
+          parent: { 
+            database_id: databaseId,
+          },
+          icon: {
+            type: 'external',
+            external: {
+              url: commit.avatar_url, // 프로필 이미지 URL을 아이콘으로 설정
+            },
+          },
           properties: {
             Name: {
               title: [
