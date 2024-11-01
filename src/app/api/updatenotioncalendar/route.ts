@@ -10,7 +10,7 @@ interface CommitData {
   date: string;
   message: string;
   branches: string[];
-  avatar_url : string;
+  avatarUrl : string;
 }
 
 export async function POST(req: NextRequest) {
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
           icon: {
             type: 'external',
             external: {
-              url: commit.avatar_url, // 프로필 이미지 URL을 아이콘으로 설정
+              url: commit.avatarUrl, // 프로필 이미지 URL을 아이콘으로 설정
             },
           },
           properties: {
