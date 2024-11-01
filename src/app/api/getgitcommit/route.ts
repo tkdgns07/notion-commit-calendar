@@ -18,6 +18,7 @@ interface CommitDetail {
     };
     message: string;
   };
+  branches: string[]; // 브랜치 정보 추가
   files: CommitFile[];
 }
 
@@ -72,6 +73,17 @@ async function getCommit(includeDetails = true): Promise<CommitDetail[] | Branch
 
         const { sha, commit: { author, message }, files } = commitDetailResponse.data;
 
+        const branchesUrl = `https://api.github.com/repos/${owner}/${repo}/branches`;
+        const branchesResponse = await axios.get(branchesUrl, {
+          headers: {
+            Authorization: `Bearer ${githubToken}`,
+          },
+        });
+
+        const branches = branchesResponse.data
+          .filter((branch: { commit: { sha: string } }) => branch.commit.sha === sha)
+          .map((branch: { name: string }) => branch.name);
+
         const formattedFiles = files.map(file => ({
           filename: file.filename,
           additions: file.additions,
@@ -86,6 +98,7 @@ async function getCommit(includeDetails = true): Promise<CommitDetail[] | Branch
           date: author.date,
           message,
           files: formattedFiles,
+          branches, // 브랜치 정보 추가
         };
       })
     );
