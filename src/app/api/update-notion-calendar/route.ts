@@ -24,9 +24,14 @@ export async function POST(req: NextRequest) {
   const commitDataArray: CommitData[] = await req.json();
 
   try {
-    // 각 커밋을 Notion 데이터베이스에 추가
     const responses = await Promise.all(
       commitDataArray.map(async (commit) => {
+        const date = new Date(commit.date);
+
+        date.setTime(date.getTime() + 3600000);
+        
+        const endTime = date.toISOString();
+
         return await notion.pages.create({
           parent: { 
             database_id: databaseId,
@@ -50,6 +55,7 @@ export async function POST(req: NextRequest) {
             Date: {
               date: {
                 start: commit.date,
+                end: endTime,
               },
             },
             User: {
