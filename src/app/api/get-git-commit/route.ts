@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
+import { PrismaClient } from "@prisma/client"
 
 //test용 주석 : dddddddddddd
 
@@ -31,19 +32,41 @@ interface BranchOnlyResult {
   branches: string[];
 }
 
+//habdling prisma
+const prisma = new PrismaClient();
+
+async function addCommit(sha : string) {
+  const commit = await prisma.tempCommits.create({
+    data: {
+      SHA : sha
+    },
+  });
+}
+
+async function findCommit(sha: string) {
+  const commit = await prisma.tempCommits.findUnique({
+    where: {
+      SHA: sha,
+    },
+  });
+
+  return commit ? false : true
+}
+
+//handling commits
 const owner = process.env.GITHUB_REPO_OWNER;
 const repo = process.env.GITHUB_REPO_NAME;
 const githubToken = process.env.GITHUB_TOKEN;
-const notionUpdateApiUrl = `${process.env.BASE_URL}/api/updatenotioncalendar`;
+const notionUpdateApiUrl = `${process.env.BASE_URL}/api/update-notion-calendar`;
 
-function getISOTimeOneSecondsAgo(): string {
-  const fiveMinutesAgo = new Date(Date.now() - 1 * 1000);
+function getISOTimeAgo(): string {
+  const fiveMinutesAgo = new Date(Date.now() - 30 * 1000);
   return fiveMinutesAgo.toISOString();
 }
 
 async function getCommit(includeDetails = true): Promise<CommitDetail[] | BranchOnlyResult> {
   try {
-    const since = getISOTimeOneSecondsAgo();
+    const since = getISOTimeAgo();
     const url = `https://api.github.com/repos/${owner}/${repo}/commits`;
 
     const commitListResponse = await axios.get(url, {
@@ -68,47 +91,53 @@ async function getCommit(includeDetails = true): Promise<CommitDetail[] | Branch
     }
 
     const commitDetails = await Promise.all(
-      commits.map(async (commit: { sha: string }) => {
-        const commitDetailUrl = `https://api.github.com/repos/${owner}/${repo}/commits/${commit.sha}`;
-        const commitDetailResponse = await axios.get<CommitDetail>(commitDetailUrl, {
-          headers: {
-            Authorization: `Bearer ${githubToken}`,
-          },
-        });
-
-        const { sha, commit: { author, message }, author : commitAuthor, files } = commitDetailResponse.data;
-
-        const branchesUrl = `https://api.github.com/repos/${owner}/${repo}/branches`;
-        const branchesResponse = await axios.get(branchesUrl, {
-          headers: {
-            Authorization: `Bearer ${githubToken}`,
-          },
-        });
-
-        const branches = branchesResponse.data
-          .filter((branch: { commit: { sha: string } }) => branch.commit.sha === sha)
-          .map((branch: { name: string }) => branch.name);
-
-        const formattedFiles = files.map(file => ({
-          filename: file.filename,
-          additions: file.additions,
-          deletions: file.deletions,
-          changes: file.changes,
-          patch: file.patch,
-        }));
-
-        return {
-          sha,
-          author: author.name,
-          date: author.date,
-          message,
-          files: formattedFiles,
-          branches, // 브랜치 정보 추가
-          avatarUrl: commitAuthor?.avatar_url || '', // 커밋 유저의 프로필 이미지 URL 추가
-        };
-      })
+      commits
+        .filter(async (commit: { sha: string }) => {
+          const exists = await findCommit(commit.sha);
+          if (!exists) {addCommit(commit.sha)}
+          return !exists;
+        })
+        .map(async (commit: { sha: string }) => {
+          const commitDetailUrl = `https://api.github.com/repos/${owner}/${repo}/commits/${commit.sha}`;
+          const commitDetailResponse = await axios.get<CommitDetail>(commitDetailUrl, {
+            headers: {
+              Authorization: `Bearer ${githubToken}`,
+            },
+          });
+    
+          const { sha, commit: { author, message }, author: commitAuthor, files } = commitDetailResponse.data;
+    
+          const branchesUrl = `https://api.github.com/repos/${owner}/${repo}/branches`;
+          const branchesResponse = await axios.get(branchesUrl, {
+            headers: {
+              Authorization: `Bearer ${githubToken}`,
+            },
+          });
+    
+          const branches = branchesResponse.data
+            .filter((branch: { commit: { sha: string } }) => branch.commit.sha === sha)
+            .map((branch: { name: string }) => branch.name);
+    
+          const formattedFiles = files.map(file => ({
+            filename: file.filename,
+            additions: file.additions,
+            deletions: file.deletions,
+            changes: file.changes,
+            patch: file.patch,
+          }));
+    
+          return {
+            sha,
+            author: author.name,
+            date: author.date,
+            message,
+            files: formattedFiles,
+            branches,
+            avatarUrl: commitAuthor?.avatar_url || '',
+          };
+        })
     );
-
+    
     return commitDetails;
   } catch (error) {
     console.error('Error fetching data:', error);
