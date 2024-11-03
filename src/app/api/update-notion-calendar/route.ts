@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Client } from '@notionhq/client';
 
-// Notion 클라이언트 초기화ddddddd
+// Notion 클라이언트 초기화dddddddss
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
 
 interface CommitData {
