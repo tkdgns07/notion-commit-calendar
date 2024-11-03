@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
     );
 
 
-    return NextResponse.json({ message: responses, data: responses }, { status: 200 });
+    return NextResponse.json({ message: "responses", data: responses }, { status: 200 });
   } catch (error) {
     // 오류 처리
     if (error instanceof Error) {
