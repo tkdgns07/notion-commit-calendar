@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 import { PrismaClient } from "@prisma/client"
 
-//test용 주석 : dddddddddddddd
+//test용 주석 : ddddddddddddddd
 
 interface CommitFile {
   filename: string;
