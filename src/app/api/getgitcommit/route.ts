@@ -36,14 +36,14 @@ const repo = process.env.GITHUB_REPO_NAME;
 const githubToken = process.env.GITHUB_TOKEN;
 const notionUpdateApiUrl = `${process.env.BASE_URL}/api/updatenotioncalendar`;
 
-function getISOTimeFiveMinutesAgo(): string {
-  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+function getISOTimeOneSecondsAgo(): string {
+  const fiveMinutesAgo = new Date(Date.now() - 1 * 1000);
   return fiveMinutesAgo.toISOString();
 }
 
 async function getCommit(includeDetails = true): Promise<CommitDetail[] | BranchOnlyResult> {
   try {
-    const since = getISOTimeFiveMinutesAgo();
+    const since = getISOTimeOneSecondsAgo();
     const url = `https://api.github.com/repos/${owner}/${repo}/commits`;
 
     const commitListResponse = await axios.get(url, {
