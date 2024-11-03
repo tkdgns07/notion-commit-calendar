@@ -35,9 +35,10 @@ interface BranchOnlyResult {
 //habdling prisma
 const prisma = new PrismaClient();
 
-async function addCommit(sha : string, branch : string[]) {
+async function addCommit(name : string, sha : string, branch : string[]) {
   await prisma.tempCommits.create({
     data: {
+      Name : name,
       SHA : sha,
       Branch : branch,
     },
@@ -126,7 +127,7 @@ async function getCommit(includeDetails = true): Promise<CommitDetail[] | Branch
             patch: file.patch,
           }));
 
-          await addCommit(sha, branches)
+          await addCommit(message, sha, branches)
     
           return {
             sha,
