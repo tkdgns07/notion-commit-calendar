@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 
-//test용 주석 : ddddddd
+//test용 주석 : dddddddd
 
 interface CommitFile {
   filename: string;
