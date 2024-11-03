@@ -35,10 +35,11 @@ interface BranchOnlyResult {
 //habdling prisma
 const prisma = new PrismaClient();
 
-async function addCommit(sha : string) {
-  const commit = await prisma.tempCommits.create({
+async function addCommit(sha : string, branch : string[]) {
+  await prisma.tempCommits.create({
     data: {
-      SHA : sha
+      SHA : sha,
+      Branch : branch,
     },
   });
 }
@@ -94,7 +95,6 @@ async function getCommit(includeDetails = true): Promise<CommitDetail[] | Branch
       commits
         .filter(async (commit: { sha: string }) => {
           const exists = await findCommit(commit.sha);
-          if (!exists) {addCommit(commit.sha)}
           return !exists;
         })
         .map(async (commit: { sha: string }) => {
@@ -114,7 +114,7 @@ async function getCommit(includeDetails = true): Promise<CommitDetail[] | Branch
             },
           });
     
-          const branches = branchesResponse.data
+          const branches : string[] = branchesResponse.data
             .filter((branch: { commit: { sha: string } }) => branch.commit.sha === sha)
             .map((branch: { name: string }) => branch.name);
     
@@ -125,6 +125,8 @@ async function getCommit(includeDetails = true): Promise<CommitDetail[] | Branch
             changes: file.changes,
             patch: file.patch,
           }));
+
+          await addCommit(sha, branches)
     
           return {
             sha,

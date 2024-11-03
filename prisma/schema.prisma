@@ -11,4 +11,5 @@ generator client {
 model TempCommits {
   id    Int    @id @default(autoincrement())
   SHA  String  @unique
+  Branch String[]
 }
